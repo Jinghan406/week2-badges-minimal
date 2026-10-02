@@ -1,0 +1,500 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Bud &amp; Drip</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one narrow column of dark cells, same grid and greys as Cluster & Mass. Single dark look by choice. */
+:root {
+  --bg: #050505;
+  --line: #1a1a1a;
+  --g1: #808080;
+  --g2: #a0a0a0;
+  --g3: #c4c4c4;
+  --fg: #e8e8e8;
+  --display: "Inter", "Helvetica Neue", Arial, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--fg); font-family: var(--display); font-weight: 300; margin: 0; }
+.wrap { max-width: 1128px; margin: 0 auto; padding-inline: max(16px, 4vw); padding-block: 64px 96px; display: flex; flex-direction: column; gap: 56px; }
+.eyebrow { font: 500 11px/1.4 var(--mono); letter-spacing: .16em; color: var(--g2); text-transform: uppercase; margin: 0; }
+h1 { font-weight: 300; font-size: clamp(40px, 7vw, 64px); letter-spacing: -.035em; line-height: 1.05; margin: 12px 0 0; text-wrap: balance; }
+.lede { font-size: 16px; line-height: 1.65; color: var(--g3); max-width: 60ch; margin: 16px 0 0; }
+section { display: flex; flex-direction: column; gap: 16px; }
+.label { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.label h2 { font-weight: 300; font-size: 22px; letter-spacing: -.02em; margin: 0; }
+.label span { font: 500 10px var(--mono); letter-spacing: .16em; color: var(--g1); text-transform: uppercase; }
+.cell { border: 1px solid var(--line); background: var(--bg); display: flex; flex-wrap: wrap; justify-content: center; padding-block: 24px 20px; padding-inline: 8px; }
+.foot { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; align-items: center; }
+.hint { font: 500 9px var(--mono); letter-spacing: .2em; color: var(--g1); text-transform: uppercase; }
+.ctrls { display: flex; gap: 8px; flex-wrap: wrap; }
+.ctrls button { font: 500 10px var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--g2); background: transparent; border: 1px solid var(--line); padding: 7px 10px; cursor: pointer; }
+.ctrls button:hover, .ctrls button[aria-pressed="true"] { color: var(--fg); border-color: var(--g1); }
+button:focus-visible { outline: 1px solid var(--g3); outline-offset: 3px; }
+
+/* one instance = a goo layer (filtered) + an overlay (crisp text, hit areas) */
+.inst { position: relative; flex: none; }
+.goo, .over { position: absolute; inset: 0; }
+.goo { pointer-events: none; }
+.body { position: absolute; left: 0; top: 0; background: var(--fg); will-change: transform; }
+.over { pointer-events: none; }
+.hit { position: absolute; border-radius: 50%; border: 0; background: transparent; cursor: pointer; pointer-events: auto; padding: 0; }
+.glyph { color: var(--bg); position: absolute; width: 24px; height: 24px; transform: translate(-50%, -50%); }
+.glyph svg { display: block; width: 24px; height: 24px; }
+.glyph svg * { transition: none; }
+.cap { position: absolute; left: 0; right: 0; text-align: center; font: 400 10px var(--mono); color: var(--g2); }
+.cap b { font-weight: 500; color: var(--g3); letter-spacing: .14em; text-transform: uppercase; }
+.bc { position: absolute; display: flex; align-items: center; justify-content: center; font: 500 11px/1 var(--mono); color: var(--bg); font-variant-numeric: tabular-nums; }
+.tip { position: absolute; color: var(--bg); }
+.tip.plain { display: flex; align-items: center; justify-content: center; font: 400 13px/1 var(--display); white-space: nowrap; }
+.tip.rich { padding: 16px; width: 248px; display: flex; flex-direction: column; gap: 6px; }
+.tip.rich strong { font: 400 15px/1.3 var(--display); letter-spacing: -.01em; }
+.tip.rich p { margin: 0; font: 300 12.5px/1.5 var(--display); color: #3a3a3a; }
+.tip.rich button { align-self: flex-start; margin-top: 6px; font: 500 10px var(--mono); letter-spacing: .16em; text-transform: uppercase; color: var(--bg); background: transparent; border: 0; border-bottom: 1px solid var(--bg); padding: 2px 0; cursor: pointer; }
+.tip.rich button:focus-visible { outline-color: var(--g1); }
+/* ---- in use ---- */
+.uses { display: grid; grid-template-columns: auto 1fr; gap: 16px; align-items: stretch; }
+.uses .side { display: grid; grid-template-rows: 1fr 1fr; gap: 16px; }
+.uses .cell { align-items: center; align-content: center; }
+.phone { position: relative; width: 300px; height: 612px; margin: 28px 36px; border-radius: 46px; background: var(--bg); overflow: hidden;
+  box-shadow: 0 0 0 1px #2a2a2a, 0 0 0 7px #0c0c0c, 0 0 0 8px #1f1f1f; }
+.notch { position: absolute; left: 50%; top: 12px; width: 92px; height: 26px; margin-left: -46px; border-radius: 13px; background: #111; z-index: 3; }
+.status { position: absolute; left: 28px; right: 28px; top: 16px; display: flex; justify-content: space-between; font: 500 11px var(--mono); color: var(--g2); }
+.status i { display: inline-block; width: 4px; height: 4px; border-radius: 50%; background: var(--g2); margin-left: 3px; vertical-align: middle; }
+.feed { position: absolute; left: 0; right: 0; top: 64px; bottom: 112px; overflow: hidden; padding: 0 22px; }
+.row { display: flex; align-items: center; gap: 12px; height: 58px; border-bottom: 1px solid #141414; }
+.row .av { width: 36px; height: 36px; border-radius: 50%; border: 1px solid #2c2c2c; flex: none; }
+.row .ln { flex: 1; display: flex; flex-direction: column; gap: 7px; }
+.row .ln i { display: block; height: 7px; border-radius: 4px; background: #1d1d1d; }
+.row .ln i:first-child { background: #333; height: 8px; }
+.row .tm { width: 22px; height: 6px; border-radius: 3px; background: #1d1d1d; align-self: flex-start; margin-top: 16px; }
+.row.new .av { background: var(--fg); border-color: var(--fg); }
+.row.new .ln i:first-child { background: #8a8a8a; }
+.tabs { position: absolute; left: 0; right: 0; bottom: 18px; height: 92px; display: flex; justify-content: space-evenly; border-top: 1px solid #141414; padding-top: 6px; }
+.homebar { position: absolute; left: 50%; bottom: 8px; width: 110px; height: 4px; margin-left: -55px; border-radius: 2px; background: #333; }
+.strip { display: flex; justify-content: center; flex-wrap: wrap; gap: 4px; }
+.av-t { position: absolute; transform: translate(-50%, -50%); font: 500 12px var(--mono); color: var(--bg); letter-spacing: .02em; }
+/* liquid toolbar */
+.barcell { justify-content: center; padding-block: 8px 28px; }
+.tbar { position: relative; flex: none; }
+.tbar .rail { position: absolute; border: 1px solid #1f1f1f; border-radius: 40px; }
+.tbar .tip.plain kbd { font: 500 10px var(--mono); color: #6a6a6a; margin-left: 8px; }
+.tbar .tip { transition: none; }
+@media (max-width: 760px) { .uses { grid-template-columns: 1fr; } .phone { margin: 24px auto; } }
+.notes { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 24px; }
+.notes div { min-width: 0; }
+.notes h3 { font: 500 10px var(--mono); letter-spacing: .16em; text-transform: uppercase; color: var(--g2); margin: 0 0 8px; }
+.notes p { margin: 0; font-size: 14px; line-height: 1.6; color: var(--g3); }
+</style>
+
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs id="defs"></defs></svg>
+
+<main class="wrap">
+  <header>
+    <p class="eyebrow">Advanced Interface · Week 2 · Tone: Minimal</p>
+    <h1>Bud &amp; Drip</h1>
+    <p class="lede">Black, white, three greys, and the same blur-and-threshold as Cluster &amp; Mass. A badge buds off its icon and pinches free. A tooltip drips up out of its anchor and hardens into a label. Both stay soft while they move and go crisp at rest.</p>
+  </header>
+
+  <section aria-labelledby="bud-h">
+    <div class="label"><h2 id="bud-h">Bud</h2><span>Badge · dot and content</span></div>
+    <div class="cell" id="bud-stage"></div>
+    <div class="foot">
+      <span class="hint">Click an icon to bud or absorb its badge</span>
+      <div class="ctrls">
+        <button type="button" id="bud-on">All on</button>
+        <button type="button" id="bud-off">All off</button>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="drip-h">
+    <div class="label"><h2 id="drip-h">Drip</h2><span>Tooltip · plain and rich</span></div>
+    <div class="cell" id="drip-stage"></div>
+    <div class="foot">
+      <span class="hint">Hover or focus an anchor · Esc closes</span>
+      <div class="ctrls">
+        <button type="button" id="speed" aria-pressed="false">Slow motion 0.25×</button>
+      </div>
+    </div>
+  </section>
+
+  <section aria-label="Bud in use">
+    <div class="label"><h2>In use</h2><span>Badge · tab bar · presence · scale</span></div>
+    <div class="uses">
+      <div class="cell"><div class="phone" id="phone"><div class="notch"></div><div class="status"><span>9:41</span><span><i></i><i></i><i></i></span></div>
+        <div class="feed" id="feed"></div><div class="tabs" id="tabs"></div><div class="homebar"></div></div></div>
+      <div class="side"><div class="cell strip" id="people"></div><div class="cell strip" id="sizes"></div></div>
+    </div>
+  </section>
+
+  <section aria-label="One drop, many anchors">
+    <div class="label"><h2>In use</h2><span>Tooltip · one drop, many anchors</span></div>
+    <div class="cell barcell" id="bar"></div>
+  </section>
+
+  <section class="notes" aria-label="States">
+    <div><h3>Badge · no content</h3><p>None → a bud swells on the icon's shoulder, necks and pinches off → a 12px dot, 3px clear of the icon. Click again and it rejoins and sinks back in.</p></div>
+    <div><h3>Badge · with content</h3><p>Same bud, then it widens into a pill and the count or word fades in once the edge is crisp. Absorbing plays the same path backwards, content first.</p></div>
+    <div><h3>Tooltip · plain</h3><p>Hover: a drop leaves the top of the anchor, rises 8px clear and flattens into a one-line label. Leave: it falls back and merges.</p></div>
+    <div><h3>Tooltip · rich</h3><p>Same drip, grown into a card with a title, a line of context and one action. It stays open while the pointer crosses into it, so the action can be reached.</p></div>
+  </section>
+</main>
+
+<script>
+(() => {
+  const defs = document.getElementById('defs');
+  const S = { speed: 1, frozen: false };
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+  const lerp = (a, b, t) => a + (b - a) * t;
+  const seg = (p, a, b) => clamp((p - a) / (b - a));
+  const E = {
+    out: t => 1 - Math.pow(1 - t, 3),
+    inOut: t => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2,
+    back: t => { const c1 = 1.4, c3 = c1 + 1; return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2); }
+  };
+  const probe = document.createElement('span');
+  probe.style.cssText = 'position:absolute;visibility:hidden;white-space:nowrap;left:-9999px;top:0';
+  document.body.appendChild(probe);
+  const textW = (txt, font) => { probe.style.font = font; probe.textContent = txt; return probe.getBoundingClientRect().width; };
+
+  let uid = 0;
+  function goo(el) {
+    const id = 'goo' + (uid++);
+    defs.insertAdjacentHTML('beforeend',
+      `<filter id="${id}" x="-20%" y="-20%" width="140%" height="140%" color-interpolation-filters="sRGB">
+         <feGaussianBlur in="SourceGraphic" stdDeviation="1.2"/>
+         <feColorMatrix values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 20 -8.5"/>
+       </filter>`);
+    const blur = defs.querySelector('#' + id + ' feGaussianBlur');
+    const layer = document.createElement('div');
+    layer.className = 'goo';
+    layer.style.filter = `url(#${id})`;
+    el.appendChild(layer);
+    let last = -1;
+    return { layer, blur: s => { s = Math.round(s * 20) / 20; if (s !== last) { blur.setAttribute('stdDeviation', s); last = s; } } };
+  }
+  function blob(layer) { const d = document.createElement('div'); d.className = 'body'; layer.appendChild(d); return d; }
+  function place(el, cx, cy, w, h, r) {
+    if (w < .5 || h < .5) { el.style.visibility = 'hidden'; return; }
+    el.style.visibility = 'visible';
+    el.style.width = w + 'px'; el.style.height = h + 'px';
+    el.style.borderRadius = Math.min(r, w / 2, h / 2) + 'px';
+    el.style.transform = `translate(${cx - w / 2}px, ${cy - h / 2}px)`;
+  }
+  const all = [];
+  const ICONS = {"mail": "<rect x=\"3.5\" y=\"6.5\" width=\"17\" height=\"11\" rx=\"3\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"/><path d=\"M5 8.5l7 5 7-5\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/>", "chat": "<circle cx=\"13\" cy=\"11\" r=\"6.5\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"/><circle cx=\"5.6\" cy=\"18.4\" r=\"2\" fill=\"currentColor\"/>", "rooms": "<circle cx=\"8\" cy=\"8\" r=\"2.6\" fill=\"currentColor\"/><circle cx=\"16\" cy=\"8\" r=\"2.6\" fill=\"currentColor\"/><circle cx=\"8\" cy=\"16\" r=\"2.6\" fill=\"currentColor\"/><circle cx=\"16\" cy=\"16\" r=\"2.6\" fill=\"currentColor\"/>", "video": "<circle cx=\"12\" cy=\"12\" r=\"7.5\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"/><circle cx=\"12\" cy=\"12\" r=\"3.5\" fill=\"currentColor\"/>", "archive": "<rect x=\"4\" y=\"5\" width=\"16\" height=\"4\" rx=\"2\" fill=\"currentColor\"/><rect x=\"6\" y=\"10.5\" width=\"12\" height=\"4\" rx=\"2\" fill=\"currentColor\"/><rect x=\"8\" y=\"16\" width=\"8\" height=\"4\" rx=\"2\" fill=\"currentColor\"/>", "sync": "<path d=\"M5 12a7 7 0 0 1 11.95-4.95M19 12a7 7 0 0 1-11.95 4.95\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\"/><circle cx=\"16.95\" cy=\"7.05\" r=\"2\" fill=\"currentColor\"/><circle cx=\"7.05\" cy=\"16.95\" r=\"2\" fill=\"currentColor\"/>"};
+
+  /* ---------------- Bud : badge ---------------- */
+  class Bud {
+    constructor(host, o) {
+      Object.assign(this, o);
+      this.W = o.W || 150; this.H = o.H || 150; this.cx = o.cx || this.W / 2; this.cy = o.cy || 72; this.R = o.R || 26; this.fs = o.fs || 11; this.feeds = []; this.pulse = 0; this.count = +o.content || 0;
+      this.p = 0; this.target = 0;
+      const el = this.el = document.createElement('div');
+      el.className = 'inst'; el.style.width = this.W + 'px'; el.style.height = this.H + 'px';
+      host.appendChild(el);
+      this.g = goo(el);
+      this.anchor = blob(this.g.layer); this.bud = blob(this.g.layer);
+      const over = document.createElement('div'); over.className = 'over'; el.appendChild(over);
+      const gs = o.gs || 24;
+      over.insertAdjacentHTML('beforeend', o.initials ? `<span class="av-t" aria-hidden="true" style="left:${this.cx}px;top:${this.cy}px">${o.initials}</span>` : `<span class="glyph" aria-hidden="true" style="left:${this.cx}px;top:${this.cy}px;width:${gs}px;height:${gs}px"><svg viewBox="0 0 24 24" style="width:${gs}px;height:${gs}px">${ICONS[this.label]}</svg></span>`);
+      this.feeders = [blob(this.g.layer), blob(this.g.layer)];
+      this.bc = document.createElement('span'); this.bc.style.fontSize = this.fs + 'px'; this.bc.className = 'bc'; this.bc.textContent = this.content || ''; over.appendChild(this.bc);
+      this.cap = document.createElement('div'); this.cap.className = 'cap'; this.cap.style.top = (this.cy + this.R + 22) + 'px'; if (o.cap === false) this.cap.style.display = 'none'; over.appendChild(this.cap);
+      const hit = this.hit = document.createElement('button');
+      hit.type = 'button'; hit.className = 'hit';
+      Object.assign(hit.style, { left: this.cx - this.R + 'px', top: this.cy - this.R + 'px', width: this.R * 2 + 'px', height: this.R * 2 + 'px' });
+      hit.addEventListener('click', () => { this.set(this.target ? 0 : 1); this.onTap && this.onTap(this); });
+      over.appendChild(hit);
+      this.measure();
+    }
+    measure() {
+      const k = this.fs / 11;
+      this.bh = this.content ? Math.round(20 * k) : Math.round(12 * Math.max(1, k * .9));
+      this.bw = this.content ? Math.max(this.bh, Math.round(textW(this.content, `500 ${this.fs}px "JetBrains Mono", ui-monospace, Menlo, monospace`)) + Math.round(13 * k)) : this.bh;
+      this.render(this.p);
+    }
+    set(t) { this.target = t; if (!t) this.feeds = []; }
+    dur() { return this.target > this.p ? 1150 : 800; }
+    setText(v) { this.content = v; this.measure(); }
+    add() { // a droplet leaves the icon and feeds the badge
+      if (this.target < 1 || this.p < 1) { this.count = Math.max(1, this.count); if (this.content !== '') this.setText(String(this.count)); this.set(1); return; }
+      if (this.feeds.length < 2) this.feeds.push({ t: 0 });
+    }
+    step(dt) {
+      if (!this.feeds.length && this.pulse <= 0) { if (this.p <= 0 && this.target === 0 && this.resetTo != null && this.content !== String(this.resetTo)) { this.count = this.resetTo; this.setText(String(this.resetTo)); } return; }
+      this.feeds.forEach(f => f.t += dt / 720);
+      while (this.feeds.length && this.feeds[0].t >= 1) { this.feeds.shift(); this.count++; this.setText(String(this.count)); this.pulse = .001; }
+      if (this.pulse > 0) { this.pulse += dt / 420; if (this.pulse >= 1) this.pulse = 0; }
+      this.render(this.p);
+    }
+    render(p) {
+      this.p = p;
+      const { cx, cy, R, bh, bw } = this;
+      const th = -Math.PI / 4, ux = Math.cos(th), uy = Math.sin(th);
+      const gap = 3, Df = R + gap + bh / 2;
+      const pa = seg(p, 0, .42), pb = seg(p, .3, .78), pc = seg(p, .58, .92);
+      const D = lerp(R * .5, R * .95, E.out(pa)) + (Df - R * .95) * E.back(pb);
+      const swell = 1 + .45 * Math.sin(Math.PI * seg(p, .15, .8));
+      const r = (bh / 2) * E.out(seg(p, 0, .38)) * swell;
+      const h = 2 * r;
+      const w = Math.max(h, lerp(h, bw * (h / bh), E.inOut(pc)));
+      // the pill grows to the right from its left cap, which keeps its distance from the icon
+      const bx = cx + ux * D + (w - h) / 2, by = cy + uy * D;
+      const pu = Math.sin(Math.PI * Math.min(1, this.pulse)) * .22;
+      const pw = w * (1 + pu * .6), ph = h * (1 + pu);
+      place(this.bud, bx, by, pw, ph, ph / 2);
+      this.bx = bx; this.by = by;
+      let fb = 0;
+      this.feeders.forEach((el, i) => { const f = this.feeds[i];
+        if (!f || p < 1) { place(el, 0, 0, 0, 0, 0); return; }
+        const t = E.inOut(f.t), sx = cx + ux * R * .55, sy = cy + uy * R * .55;
+        const rr = lerp(4.6, 3.2, t) * (this.R / 26) ** .5;
+        place(el, lerp(sx, bx - (w - h) / 2, t), lerp(sy, by, t), rr * 2, rr * 2, rr);
+        fb = Math.max(fb, Math.sin(Math.PI * f.t)); });
+      const aR = R - 1.5 * Math.sin(Math.PI * seg(p, 0, .6));
+      place(this.anchor, cx, cy, aR * 2, aR * 2, aR);
+      this.g.blur(1.2 + 4.8 * (E.out(seg(p, 0, .22)) - E.inOut(seg(p, .42, .8))) + 3.2 * fb + 2.4 * pu);
+      Object.assign(this.bc.style, { left: bx - w / 2 + 'px', top: by - h / 2 + 'px', width: w + 'px', height: h + 'px', opacity: seg(p, .82, 1) });
+      const state = p <= 0 ? 'none' : p >= 1 ? (this.content || 'dot') : (this.target ? 'budding' : 'absorbing');
+      this.cap.innerHTML = `<b>${this.label}</b> · ${state}`;
+      this.hit.setAttribute('aria-label', `${this.label}, badge ${p >= .5 ? 'on' : 'off'}. Toggle badge`);
+      this.hit.setAttribute('aria-pressed', this.target ? 'true' : 'false');
+    }
+  }
+
+  /* ---------------- Drip : tooltip ---------------- */
+  class Drip {
+    constructor(host, o) {
+      Object.assign(this, o);
+      this.rich = o.kind === 'rich';
+      this.W = this.rich ? 320 : 280; this.H = 300;
+      this.cx = this.W / 2; this.cy = this.H - 64; this.R = 26; this.gap = 8;
+      this.p = 0; this.target = 0;
+      const el = this.el = document.createElement('div');
+      el.className = 'inst'; el.style.width = this.W + 'px'; el.style.height = this.H + 'px';
+      host.appendChild(el);
+      this.g = goo(el);
+      this.anchor = blob(this.g.layer); this.drop = blob(this.g.layer);
+      const over = document.createElement('div'); over.className = 'over'; el.appendChild(over);
+      over.insertAdjacentHTML('beforeend', `<span class="glyph" aria-hidden="true" style="left:${this.cx}px;top:${this.cy}px"><svg viewBox="0 0 24 24">${ICONS[this.label]}</svg></span>`);
+      this.cap = document.createElement('div'); this.cap.className = 'cap'; this.cap.style.top = (this.cy + this.R + 22) + 'px'; over.appendChild(this.cap);
+      const tipId = 'tip' + (uid++);
+      const tip = this.tip = document.createElement('div');
+      tip.id = tipId; tip.setAttribute('role', 'tooltip');
+      tip.className = 'tip ' + (this.rich ? 'rich' : 'plain');
+      if (this.rich) {
+        tip.innerHTML = `<strong></strong><p></p><button type="button"></button>`;
+        this.fillRich(false);
+        tip.querySelector('button').addEventListener('click', () => this.fillRich(!this.active));
+      } else tip.textContent = this.text;
+      over.appendChild(tip);
+      const hit = this.hit = document.createElement('button');
+      hit.type = 'button'; hit.className = 'hit'; hit.setAttribute('aria-label', this.label); hit.setAttribute('aria-describedby', tipId);
+      Object.assign(hit.style, { left: this.cx - this.R + 'px', top: this.cy - this.R + 'px', width: this.R * 2 + 'px', height: this.R * 2 + 'px' });
+      over.appendChild(hit);
+      let tOpen, tClose;
+      const open = (delay) => { clearTimeout(tClose); clearTimeout(tOpen); tOpen = setTimeout(() => this.set(1), delay); };
+      const close = (delay) => { clearTimeout(tOpen); clearTimeout(tClose); tClose = setTimeout(() => this.set(0), delay); };
+      hit.addEventListener('pointerenter', e => { if (e.pointerType === 'mouse') open(this.rich ? 150 : 100); });
+      hit.addEventListener('pointerleave', e => { if (e.pointerType === 'mouse') close(this.rich ? 260 : 60); });
+      hit.addEventListener('click', e => { if (e.pointerType !== 'mouse') this.set(this.target ? 0 : 1); });
+      tip.addEventListener('pointerenter', () => clearTimeout(tClose));
+      tip.addEventListener('pointerleave', () => close(200));
+      hit.addEventListener('focus', () => open(0));
+      el.addEventListener('focusout', e => { if (!el.contains(e.relatedTarget)) close(0); });
+      el.addEventListener('keydown', e => { if (e.key === 'Escape') { this.set(0); hit.focus(); } });
+      this.measure();
+    }
+    fillRich(active) {
+      this.active = active;
+      const t = this.tip;
+      t.querySelector('strong').textContent = active ? 'Syncing' : 'Sync paused';
+      t.querySelector('p').textContent = active ? 'Changes upload as you make them. Last synced just now.' : 'Last synced 4 min ago. Edits stay on this device until you resume.';
+      t.querySelector('button').textContent = active ? 'Pause sync' : 'Resume sync';
+      this.cap && (this.cap.dataset.s = active ? 'on' : 'off');
+    }
+    measure() {
+      if (this.rich) { this.tw = 248; this.th = Math.ceil(this.tip.offsetHeight || 120); this.rad = 14; }
+      else { this.tw = Math.round(textW(this.text, '400 13px Inter, "Helvetica Neue", Arial, sans-serif')) + 28; this.th = 30; this.rad = 15; }
+      this.render(this.p);
+    }
+    set(t) { this.target = t; }
+    dur() { return this.target > this.p ? (this.rich ? 950 : 800) : 520; }
+    render(p) {
+      this.p = p;
+      const { cx, cy, R, gap, tw, th, rad } = this;
+      const top = cy - R, yb = top - gap;
+      const pa = seg(p, 0, .35), pb = seg(p, .2, .66), pc = seg(p, .5, .9);
+      const r = 13 * E.out(pa) * (1 + .18 * Math.sin(Math.PI * pb));
+      let dy = lerp(cy - R * .5, top + 3, E.out(pa));
+      dy += ((yb - 13) - (top + 3)) * E.back(pb);
+      const bottom = dy + r;
+      const m = E.inOut(pc);
+      const w = lerp(2 * r, tw, m), h = lerp(2 * r, th, m), rr = lerp(r, rad, m);
+      place(this.drop, cx, bottom - h / 2, w, h, rr);
+      const aR = R - 1.5 * Math.sin(Math.PI * seg(p, 0, .5));
+      place(this.anchor, cx, cy, aR * 2, aR * 2, aR);
+      this.g.blur(1 + 5 * (E.out(seg(p, 0, .2)) - E.inOut(seg(p, .4, .76))));
+      const o = seg(p, .82, 1);
+      Object.assign(this.tip.style, {
+        left: cx - tw / 2 + 'px', top: yb - th + 'px', width: tw + 'px', height: th + 'px',
+        opacity: o, transform: `translateY(${(1 - o) * 3}px)`, pointerEvents: p > .9 ? 'auto' : 'none', visibility: p > .8 ? 'visible' : 'hidden'
+      });
+      const state = p <= 0 ? 'default' : p >= 1 ? (this.rich ? 'rich tooltip' : 'plain tooltip') : (this.target ? 'rising' : 'falling');
+      this.cap.innerHTML = `<b>${this.label}</b> · ${state}`;
+    }
+  }
+
+  const budStage = document.getElementById('bud-stage');
+  const buds = [
+    new Bud(budStage, { label: 'mail', content: '3' }),
+    new Bud(budStage, { label: 'chat', content: '12' }),
+    new Bud(budStage, { label: 'rooms', content: '' }),
+    new Bud(budStage, { label: 'video', content: 'live' })
+  ];
+  const dripStage = document.getElementById('drip-stage');
+  const drips = [
+    new Drip(dripStage, { label: 'archive', kind: 'plain', text: 'Move to archive' }),
+    new Drip(dripStage, { label: 'sync', kind: 'rich' })
+  ];
+  all.push(...buds, ...drips);
+  document.fonts && document.fonts.ready.then(() => all.forEach(d => d.measure()));
+
+  /* ---------------- in use: phone tab bar, presence, scale ---------------- */
+  const feed = document.getElementById('feed');
+  const rowHTML = () => { const a = 40 + Math.random() * 45, b = 55 + Math.random() * 35; return `<span class="av"></span><span class="ln"><i style="width:${a}%"></i><i style="width:${b}%"></i></span><span class="tm"></span>`; };
+  for (let i = 0; i < 7; i++) { const r = document.createElement('div'); r.className = 'row'; r.innerHTML = rowHTML(); feed.appendChild(r); }
+  const newRow = () => { const r = document.createElement('div'); r.className = 'row new'; r.innerHTML = rowHTML(); feed.prepend(r);
+    r.animate([{ height: '0px', opacity: 0 }, { height: '58px', opacity: 1 }], { duration: 520, easing: 'cubic-bezier(.2,.8,.2,1)' });
+    setTimeout(() => r.classList.remove('new'), 2600); while (feed.children.length > 9) feed.lastChild.remove(); };
+  const tabsEl = document.getElementById('tabs');
+  const tabs = [['mail', '2'], ['chat', '5'], ['rooms', ''], ['video', '1']].map(([label, c]) => {
+    const b = new Bud(tabsEl, { label, content: c, W: 66, H: 86, cx: 33, cy: 38, R: 19, gs: 18, cap: false });
+    b.onTap = t => { if (!t.target) { t.count = 0; } else if (t.content !== '') { t.count = 1; t.setText('1'); } };
+    return b; });
+  const people = ['AK', 'JF', 'MR', 'SL', 'TO'].map((ini, i) => new Bud(document.getElementById('people'), { label: 'p' + i, initials: ini, content: '', W: 96, H: 120, cy: 60, R: 24, cap: false }));
+  const sizes = [
+    new Bud(document.getElementById('sizes'), { label: 'mail', content: '1', W: 100, H: 130, cy: 66, R: 16, gs: 16, fs: 9, cap: false }),
+    new Bud(document.getElementById('sizes'), { label: 'chat', content: '24', W: 140, H: 130, cy: 66, R: 26, cap: false }),
+    new Bud(document.getElementById('sizes'), { label: 'video', content: '99+', W: 190, H: 150, cy: 76, R: 38, gs: 34, fs: 14, cap: false })];
+  all.push(...tabs, ...people, ...sizes);
+  setTimeout(() => { tabs.forEach((b, i) => setTimeout(() => b.set(i === 2 ? 0 : 1), i * 200)); people.forEach((b, i) => i % 2 || setTimeout(() => b.set(1), 400 + i * 160)); sizes.forEach((b, i) => setTimeout(() => b.set(1), 600 + i * 220)); }, 500);
+  // a quiet simulation: messages arrive, people come and go
+  setInterval(() => { if (S.frozen) return; const r = Math.random(); const t = r < .4 ? tabs[0] : r < .75 ? tabs[1] : r < .88 ? tabs[3] : tabs[2];
+    if (t.content === '') { t.set(1); return; } if (t.count >= 99) return; t.add(); if (t === tabs[0] || t === tabs[1]) setTimeout(newRow, 300); }, 2600);
+  setInterval(() => { if (S.frozen) return; const b = people[Math.floor(Math.random() * people.length)]; b.set(b.target ? 0 : 1); }, 2100);
+  setInterval(() => { if (S.frozen) return; const b = sizes[1]; if (b.target && b.count < 98) b.add(); }, 3400);
+
+  /* ---------------- in use: one drop, many anchors ---------------- */
+  const TB = {
+    bold: '<path d="M8 5h4.5a3.5 3.5 0 0 1 0 7H8zM8 12h5.5a3.5 3.5 0 0 1 0 7H8z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/>',
+    italic: '<path d="M11 5h7M6 19h7M14.5 5l-5 14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>',
+    link: '<rect x="2.5" y="9" width="11" height="6" rx="3" fill="none" stroke="currentColor" stroke-width="2"/><rect x="10.5" y="9" width="11" height="6" rx="3" fill="none" stroke="currentColor" stroke-width="2"/>',
+    share: '<circle cx="6" cy="12" r="2.4" fill="currentColor"/><circle cx="17.5" cy="6" r="2.4" fill="currentColor"/><circle cx="17.5" cy="18" r="2.4" fill="currentColor"/><path d="M8 11l7.5-4M8 13l7.5 4" stroke="currentColor" stroke-width="2"/>'
+  };
+  class Bar {
+    constructor(host, items) {
+      this.items = items; const n = items.length; this.R = 20; this.sp = 72; this.W = n * this.sp + 24; this.H = 300; this.cy = this.H - 48;
+      this.cxs = items.map((_, i) => 12 + this.sp / 2 + i * this.sp);
+      const el = this.el = document.createElement('div'); el.className = 'tbar'; el.style.width = this.W + 'px'; el.style.height = this.H + 'px'; host.appendChild(el);
+      const rail = document.createElement('div'); rail.className = 'rail'; Object.assign(rail.style, { left: '0px', top: this.cy - this.R - 10 + 'px', width: this.W + 'px', height: this.R * 2 + 20 + 'px' }); el.appendChild(rail);
+      this.g = goo(el); this.anchors = items.map(() => blob(this.g.layer)); this.drop = blob(this.g.layer);
+      const over = document.createElement('div'); over.className = 'over'; el.appendChild(over);
+      items.forEach((it, i) => over.insertAdjacentHTML('beforeend', `<span class="glyph" aria-hidden="true" style="left:${this.cxs[i]}px;top:${this.cy}px;width:20px;height:20px"><svg viewBox="0 0 24 24" style="width:20px;height:20px">${it.icon}</svg></span>`));
+      this.plain = document.createElement('div'); this.plain.className = 'tip plain'; this.plain.setAttribute('role', 'tooltip'); over.appendChild(this.plain);
+      this.card = document.createElement('div'); this.card.className = 'tip rich'; this.card.innerHTML = '<strong></strong><p></p><button type="button"></button>'; over.appendChild(this.card);
+      this.card.querySelector('button').addEventListener('click', () => { this.copied = !this.copied; this.fillCard(); if (this.items[this.idx].rich) { this.cur = this.to = this.dims(this.idx); this.render(); } });
+      this.fillCard();
+      this.P = 0; this.TG = 0; this.idx = 0; this.tr = 1; this.shown = 0; this.x = this.fx = this.tx = this.cxs[0];
+      this.cur = this.from = this.to = this.dims(0); this.setText(0);
+      this.hits = items.map((it, i) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'hit'; b.setAttribute('aria-label', it.label);
+        Object.assign(b.style, { left: this.cxs[i] - this.R + 'px', top: this.cy - this.R + 'px', width: this.R * 2 + 'px', height: this.R * 2 + 'px' });
+        b.addEventListener('pointerenter', () => this.hover(i)); b.addEventListener('pointerleave', () => this.leave());
+        b.addEventListener('focus', () => this.hover(i, true)); b.addEventListener('blur', e => { if (!this.el.contains(e.relatedTarget)) this.leave(); });
+        b.addEventListener('click', () => this.hover(i, true)); over.appendChild(b); return b; });
+      [this.plain, this.card].forEach(t => { t.addEventListener('pointerenter', () => clearTimeout(this.tc)); t.addEventListener('pointerleave', () => this.leave()); });
+      el.addEventListener('keydown', e => { if (e.key === 'Escape') this.TG = 0; });
+      this.render();
+    }
+    measure() { this.cur = this.to = this.dims(this.idx); this.render(); }
+    fillCard() { const c = this.card;
+      c.querySelector('strong').textContent = this.copied ? 'Link copied' : 'Share';
+      c.querySelector('p').textContent = this.copied ? 'Anyone with the link can view this document.' : 'Invite people, or copy a link to this document.';
+      c.querySelector('button').textContent = this.copied ? 'Done' : 'Copy link'; }
+    dims(i) { const it = this.items[i]; if (it.rich) { const c = this.card, oh = c.style.height, ow = c.style.width; c.style.height = 'auto'; c.style.width = '248px'; const hh = Math.ceil(c.offsetHeight || 118); c.style.height = oh; c.style.width = ow; return { w: 248, h: hh, r: 14 }; }
+      return { w: Math.round(textW(it.text, '400 13px Inter, "Helvetica Neue", Arial, sans-serif')) + (it.key ? Math.round(textW(it.key, '500 10px "JetBrains Mono", monospace')) + 8 : 0) + 28, h: 30, r: 15 }; }
+    setText(i) { this.shown = i; const it = this.items[i]; if (!it.rich) this.plain.innerHTML = `${it.text}${it.key ? `<kbd>${it.key}</kbd>` : ''}`; }
+    hover(i, now) { clearTimeout(this.tc); clearTimeout(this.tw);
+      const go = () => {
+        if (this.P < .5 && this.TG === 0 || this.P < .05) { this.idx = i; this.x = this.fx = this.tx = this.cxs[i]; this.cur = this.from = this.to = this.dims(i); this.tr = 1; this.setText(i); this.TG = 1; }
+        else if (i !== this.idx) { this.fx = this.x; this.tx = this.cxs[i]; this.from = { ...this.cur }; this.to = this.dims(i); this.tr = 0; this.pending = i; this.idx = i; this.TG = 1; }
+        else this.TG = 1; };
+      if (now || this.TG === 1) go(); else this.tw = setTimeout(go, 120); }
+    leave() { clearTimeout(this.tw); clearTimeout(this.tc); this.tc = setTimeout(() => { this.TG = 0; }, this.items[this.idx].rich ? 280 : 140); }
+    step(dt) { let ch = false;
+      if (this.P !== this.TG) { const d = this.TG > this.P ? (this.items[this.idx].rich ? 900 : 760) : 480; const k = dt / d;
+        this.P = this.TG > this.P ? Math.min(1, this.P + k) : Math.max(0, this.P - k); ch = true; }
+      if (this.tr < 1) { this.tr = Math.min(1, this.tr + dt / 480); const m = E.inOut(this.tr); this.x = lerp(this.fx, this.tx, m);
+        this.cur = { w: lerp(this.from.w, this.to.w, m), h: lerp(this.from.h, this.to.h, m), r: lerp(this.from.r, this.to.r, m) };
+        if (this.pending != null && this.tr >= .5) { this.setText(this.pending); this.pending = null; } ch = true; }
+      if (ch) this.render(); }
+    render() {
+      const p = this.P, R = this.R, cy = this.cy, top = cy - R, gap = 8, yb = top - gap, ax = this.cxs[this.idx];
+      this.anchors.forEach((a, i) => { const pr = i === this.idx ? Math.sin(Math.PI * seg(p, 0, .5)) : 0; const aR = R - 1.5 * pr; place(a, this.cxs[i], cy, aR * 2, aR * 2, aR); });
+      const pa = seg(p, 0, .35), pb = seg(p, .2, .66), pc = seg(p, .5, .9);
+      const r = 12 * E.out(pa) * (1 + .18 * Math.sin(Math.PI * pb));
+      let dy = lerp(cy - R * .5, top + 3, E.out(pa)); dy += ((yb - 12) - (top + 3)) * E.back(pb);
+      const bottom = dy + r, m = E.inOut(pc), { w: tw, h: th, r: rad } = this.cur;
+      const w = lerp(2 * r, tw, m), h = lerp(2 * r, th, m), rr = lerp(r, rad, m);
+      const x = this.tr < 1 ? this.x : ax;
+      place(this.drop, x, bottom - h / 2, w, h, rr);
+      const trav = this.tr < 1 ? Math.sin(Math.PI * this.tr) : 0;
+      this.g.blur(1 + 5 * (E.out(seg(p, 0, .2)) - E.inOut(seg(p, .4, .76))) + 4.5 * trav);
+      const o = seg(p, .82, 1) * (1 - trav), sr = !!this.items[this.shown].rich;
+      const sty = (el, vis) => Object.assign(el.style, { left: x - tw / 2 + 'px', top: yb - th + 'px', width: tw + 'px', height: th + 'px', opacity: vis ? o : 0,
+        transform: `translateY(${(1 - seg(p, .82, 1)) * 3}px)`, pointerEvents: vis && p > .9 && trav < .2 ? 'auto' : 'none', visibility: vis && p > .8 ? 'visible' : 'hidden' });
+      sty(this.plain, !sr); sty(this.card, sr);
+      this.hits.forEach((b, i) => b.setAttribute('aria-expanded', p > .5 && i === this.idx ? 'true' : 'false'));
+    }
+  }
+  const bar = new Bar(document.getElementById('bar'), [
+    { label: 'Bold', icon: TB.bold, text: 'Bold', key: '⌘B' }, { label: 'Italic', icon: TB.italic, text: 'Italic', key: '⌘I' },
+    { label: 'Link', icon: TB.link, text: 'Add link', key: '⌘K' }, { label: 'Comment', icon: ICONS.chat, text: 'Comment', key: '⌥⌘M' },
+    { label: 'Archive', icon: ICONS.archive, text: 'Move to archive' }, { label: 'Share', icon: TB.share, rich: true }]);
+  all.push(bar);
+  document.fonts && document.fonts.ready.then(() => { bar.cur = bar.to = bar.dims(bar.idx); bar.render(); });
+
+  document.getElementById('bud-on').onclick = () => buds.forEach((b, i) => setTimeout(() => b.set(1), i * 140));
+  document.getElementById('bud-off').onclick = () => buds.forEach((b, i) => setTimeout(() => b.set(0), i * 90));
+  const sp = document.getElementById('speed');
+  sp.onclick = () => { S.speed = S.speed === 1 ? .25 : 1; sp.setAttribute('aria-pressed', S.speed !== 1); };
+
+  let last = performance.now();
+  function tick(now) {
+    const dt = Math.min(50, now - last); last = now;
+    if (!S.frozen) for (const c of all) {
+      if (c.step) c.step(dt * S.speed);
+      if (c.p !== c.target) {
+        const k = dt / c.dur() * S.speed * (reduce ? 3 : 1);
+        c.render(c.target > c.p ? Math.min(c.target, c.p + k) : Math.max(c.target, c.p - k));
+      }
+    }
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+  // opening demo: badges bud in one after another
+  setTimeout(() => buds.forEach((b, i) => setTimeout(() => b.set(i === 3 ? 0 : 1), 300 + i * 220)), 200);
+
+  // hooks used to trace keyframes into Figma
+  window.__bd = { buds, drips, freeze: v => { S.frozen = v; } };
+})();
+</script>
+
+</body></html>
